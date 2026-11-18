@@ -1,0 +1,21 @@
+{
+  "name": "security-actions",
+  "module": "src/main.ts",
+  "type": "module",
+  "private": true,
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "bun src/main.ts",
+    "dev": "bun --watch src/main.ts",
+    "build:standalone": "bun build src/main.ts --outfile dist/bot --minify --target=bun --bytecode --production --compile --format=esm --sourcemap --trim",
+    "docker:build": "docker compose build",
+    "docker:deploy": "docker stack ls --format '{{.Name}}' | grep -q '^security-actions$' && { echo 'Error: Stack exists'; false; } || { docker compose pull && docker compose up -d; }",
+    "docker:logs": "docker compose logs -f",
+    "typecheck": "bun check"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "^7"
+  },
+  "dependencies": {}
+}

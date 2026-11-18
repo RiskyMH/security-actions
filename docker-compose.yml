@@ -1,0 +1,28 @@
+services:
+   security-actions:
+     image: ghcr.io/riskymh/security-actions:latest
+     build: .
+     restart: unless-stopped
+     init: true
+     extra_hosts:
+       - "host.docker.internal:host-gateway"
+     ports:
+       - "${PORT:-3000}:3000"
+     environment:
+       DB_PATH: ${DB_PATH:-/data/security-actions.sqlite}
+       DISCORD_TOKEN: ${DISCORD_TOKEN:?REQUIRED}
+       DISCORD_PUBLIC_KEY: ${DISCORD_PUBLIC_KEY:?REQUIRED}
+       PORT: 3000
+       NODE_ENV: production
+       FORCE_COLOR: 1
+     volumes:
+        - data:/data
+     deploy:
+       resources:
+         limits:
+           memory: 128M
+         reservations:
+           memory: 32M
+
+volumes:
+  data:
