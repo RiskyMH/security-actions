@@ -1,6 +1,5 @@
 import Database from "bun:sqlite";
-
-export const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+import { DUE_CUTOFF_MS } from "./schedule";
 
 export interface GuildConfigRow {
     id: string;
@@ -26,7 +25,7 @@ db.run(`
 export const getGuildConfig = (id: string): GuildConfigRow | null =>
     db.query<GuildConfigRow, [string]>("SELECT * FROM guilds WHERE id = ?").get(id);
 
-export const getDueGuilds = (cutoff = Date.now() - TEN_HOURS_MS): GuildConfigRow[] =>
+export const getDueGuilds = (cutoff = Date.now() - DUE_CUTOFF_MS): GuildConfigRow[] =>
     db.query<GuildConfigRow, [number]>(
         `SELECT * FROM guilds
          WHERE (pause_dms = 1 OR pause_invites = 1) AND last_refreshed <= ?

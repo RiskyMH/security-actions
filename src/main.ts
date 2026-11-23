@@ -1,5 +1,6 @@
 import { ComponentType, discordFetch as discordFetch_, InteractionCallbackType, InteractionType, MessageFlags, MessageType, PermissionFlags, verifyDiscordSignature as verifyDiscordSignature_, type DiscordGuild, type DiscordInteraction, type DiscordMessage } from "./discord";
 import { getDueGuilds, getGuildConfig, markGuildRefreshed, removeGuild, upsertGuildConfig, type GuildConfigRow } from "./db";
+import { getDisableUntil, nextRefreshTime } from "./schedule";
 
 const BOT_TOKEN = process.env.DISCORD_TOKEN!;
 const PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY!;
@@ -11,15 +12,8 @@ const BOT_USER_ID = atob(BOT_TOKEN.split(".")[0]!);
 const discordFetch = discordFetch_(BOT_TOKEN);
 const verifyDiscordSignature = await verifyDiscordSignature_(PUBLIC_KEY);
 
-function getCleanHourlyDisableUntil(): string {
-    const target = new Date();
-    target.setMinutes(0, 0, 0);
-    target.setHours(target.getHours() + 23);
-    return target.toISOString();
-}
-
 async function applyGuildIncidentActions(config: GuildConfigRow): Promise<boolean> {
-    const untilIso = getCleanHourlyDisableUntil();
+    const untilIso = getDisableUntil();
 
     const putRes = await discordFetch(`/guilds/${config.id}/incident-actions`, {
         method: "PUT",
@@ -322,7 +316,18 @@ if (cmdRes.ok) {
     throw new Error(`[COMMANDS] Failed to register commands: ${cmdRes.status} ${await cmdRes.text()}`);
 }
 
-const cron = Bun.cron("0 */12 * * *", () => runRefresh("cron"));
+// Self-reschedule off the epoch-derived slot rather than a `*/12` cron expression:
+// 23h doesn't divide into a day, and this keeps the cadence stable across restarts.
+let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+let scheduleStopped = false;
+function scheduleNextRefresh() {
+    if (scheduleStopped) return;
+    refreshTimer = setTimeout(() => {
+        void runRefresh("cron");
+        scheduleNextRefresh();
+    }, Math.max(0, nextRefreshTime() - Date.now()));
+}
+scheduleNextRefresh();
 runRefresh("startup");
 
 
@@ -335,6 +340,7 @@ process.on("uncaughtException", (err) => {
 process.on("SIGTERM", () => {
     console.info("SIGTERM received. Shutting down...");
     server.stop(false);
-    cron.stop();
+    scheduleStopped = true;
+    clearTimeout(refreshTimer);
     isRunningRefresh = false;
 });

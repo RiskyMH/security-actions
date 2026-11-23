@@ -1,6 +1,6 @@
 # security-actions
 
-Forever enable Discord [security actions](https://support.discord.com/hc/en-us/articles/17439993574167-Activity-Alerts-Security-Actions) for your server. This bot will automatically refresh the security actions every 24 hours, so you don't have to worry about them expiring. This means you can safely pause DMs and/or invites without worrying about them being re-enabled by Discord.
+Forever enable Discord [security actions](https://support.discord.com/hc/en-us/articles/17439993574167-Activity-Alerts-Security-Actions) for your server. This bot will automatically refresh the security actions every day, so you don't have to worry about them expiring. This means you can safely pause DMs and/or invites without worrying about them being re-enabled by Discord.
 
 ## Setup
 
